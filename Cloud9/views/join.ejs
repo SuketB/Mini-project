@@ -1,0 +1,77 @@
+
+<%- include ("./partials/header") %>
+
+<div class="ui main container segment" >
+    <div class="ui huge header" >Join the Network</div>   
+        <div>
+            <h4>Connect to the Testbed node</h4> 
+            <p><b>Step 1:</b> Install <a href="https://geth.ethereum.org/downloads/" target="_blank" >geth</a>> in your Laptop/ Desktop. </p>
+            
+            <p><b>Step 2:</b> Copy the below genesis file and save it in a directory(say <i>node</i>) as <i>genesis.json.</i></p> 
+            <div id="a" style="border:1px solid rgb(136, 91, 91);height:50px;width:800px;overflow-y:auto;" >
+                    <p style="width:250%;">
+                        <code>
+                            
+                            	<%= data.genesis %>
+                                                       
+                        </code>
+                    </p>    
+
+            </div>
+				<button type="button" onclick="copyDivToClipboard1()" >Click to copy</button>
+            <script>
+                function copyDivToClipboard1() {
+                    var range = document.createRange();
+                    range.selectNode(document.getElementById("a"));
+                    window.getSelection().removeAllRanges(); // clear current selection
+                    window.getSelection().addRange(range); // to select text
+                    document.execCommand("copy");
+                    window.getSelection().removeAllRanges();// to deselect
+                }
+                
+            </script>	                            
+            
+            <p><b>Step 3:</b>  Execute the following commands to connect your device with the testbed network.</p>
+            
+            <code> 1. geth --datadir $PWD init genesis.json </code>
+            </br>
+            <code> 2. geth --datadir $PWD --port 30301 --http.port "8545" --http.corsdomain "https://remix.ethereum.org" --http.api web3,eth,personal,debug,net --allow-insecure-unlock --identity node1 console
+            </code>
+            <p><b>Step 4:</b> Now run the below command in the terminal to add your local node to our blockchain network</p>
+            <div id="b" style="border:1px solid rgb(136, 91, 91);height:50px;width:800px;overflow-y:auto;overflow-x:scroll;" >
+                    <p style="width:250%;">
+                        <code>
+                            
+                            admin.addPeer(<%= data.bootnode %>)
+                                                       
+                        </code>
+                    </p>    
+            </div>
+       	<button type="button" onclick="copyDivToClipboard2()">Click to copy</button>
+	<script>
+            function copyDivToClipboard2() {
+                    var range = document.createRange();
+                    range.selectNode(document.getElementById("b"));
+                    window.getSelection().removeAllRanges(); // clear current selection
+                    window.getSelection().addRange(range); // to select text
+                    document.execCommand("copy");
+                    window.getSelection().removeAllRanges();// to deselect
+                }
+       </script>
+            <p>The above command should return <i>True</i>. You can check whether your node is connected using the command  below</p>
+            <code>admin.peers</code>
+            <p>Upon successful connection user will be able to sync the blocks, mine blocks, deploy and interact with smart contracts.</p>
+            <p><p><b>Note:</b> Make sure your system time is upto date. Otherwise block synchronization issues occur.
+                <!-- and in sync with the testbed network time as shown here -->
+                
+            <p>For more information visit the link <a href="https://geth.ethereum.org/docs/getting-started/private-net">Geth Private Network</a>.</p>
+        </div>
+        
+    </div>
+    
+
+<%- include ("./partials/footer") %>
+
+
+
+

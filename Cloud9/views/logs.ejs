@@ -1,0 +1,70 @@
+<%- include ("./partials/header") %>
+<div class="ui main container segment">
+    <div class="ui celled ordered list" id="alist">
+        
+      </div>
+
+    <div class="ui segment" id="belowlist">
+
+        <div class="ui active centered inline loader" id="jhoom"></div>
+        
+    </div>
+  </div>
+
+
+  <script type="text/javascript">
+
+    function streaming(){
+    const source = new EventSource('<%=endpoint%>');
+
+    source.addEventListener('message', message => {
+     var data= JSON.parse(message.data);
+
+     console.log(data);
+     
+     if(data.text==="end\n")
+     {
+     
+         source.close();
+         
+
+         $('#jhoom').remove();
+         $('#belowlist').append('<a href="<%=redirect%>"><button class="ui primary fluid button" >Go</button></a>');
+
+   
+
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+     }
+     
+     else{
+
+     
+        var listItem=$('<div class="item"></div>').text(data.text);
+     $('#alist').append(listItem);
+     
+
+
+     
+     }
+
+
+    });
+}
+
+document.addEventListener("DOMContentLoaded", streaming);
+    
+    
+  </script>
+    
+   
+
+   <%- include ("./partials/footer") %>

@@ -1,0 +1,85 @@
+
+<html>
+    <head>
+        <title>
+           Admin Dashboard
+        </title>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css">
+
+        <link rel="stylesheet" href="/stylesheets/app.css">
+
+        
+
+        <script
+  src="https://code.jquery.com/jquery-3.1.1.min.js"
+  integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+  crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.js"></script>
+
+		<style>
+			body > .grid {
+				height: 100%;
+			}
+
+			.column {
+				max-width: 360px;
+			}
+		</style>
+		
+       
+    </head>
+    <body>
+        <div class="ui inverted menu">
+			<div class="header item">
+			  Welcome <%=admin%>
+			</div>
+			
+		  </div>
+
+
+
+<div >
+	<h1 class="title text-center">Active Sessions</h1>
+	<% for(let user of users) {%>
+         
+
+		<div class="ui card m-3">
+			<div class="content">
+				<div>
+					
+				</div>
+				<i class="right floated ui id badge icon"></i>
+			
+			  <div class="header">
+				<h3 class="mb-3">User: <%= user.username %> </h3>
+					<p class="mb-3">Session Start: <%= user.start_time %> </p>
+				Log out current user
+				
+			  </div>
+			  
+			  <div class="description">
+				Remove the user and delete the network here.
+			  </div>
+			</div>
+			<div class="extra content">
+			  
+				
+				<form action="/kick" class="ui form" method="POST">
+					<input class="ui basic red button" type="submit" value="Remove">
+				</form>
+			  </div>
+			</div>
+		  </div>
+
+		
+	
+	<% } %>  
+	
+
+
+
+
+</body>
+</html>
+
+

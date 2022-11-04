@@ -1,0 +1,104 @@
+<%- include ("./partials/header") %> 
+<div class="ui main container segment">
+    <div class="ui huge header">Enter Your Details</div>   
+    <form action="/" class="ui form" method="POST">
+      <h4>Choose the device types for your blockchain network</h4>
+
+        <table border="0">
+          <tr>
+            <td><b>Server</b></td>
+          </tr>
+          <tr>
+            <td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; </td>
+            <td>1 <input type="radio" value="1" name="Server" checked="checked"></td>
+            <td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</td>
+            <td>2 <input type="radio" value="2" name="Server" ></td>
+            <td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</td>
+            <td>3 <input type="radio" value="3" name="Server" ></td>
+            <td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</td>
+            <td>4 <input type="radio" value="4" name="Server" ></td>
+            
+          </tr>
+          <tr>
+            <td><b>Raspberry 3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b></td>
+          </tr>
+          <tr>
+            <td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</td>
+            <td>0 <input type="radio" value="0" name="Raspberry3" checked="checked"></td>
+            <td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</td>
+            <td>1 <input type="radio" value="1" name="Raspberry3"></td>
+            <td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</td>
+            <td>2 <input type="radio" value="2" name="Raspberry3"></td>
+            <td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</td>
+            <td>3 <input type="radio" value="3" name="Raspberry3"></td>
+  
+          </tr>
+          <tr>
+            <td><b>Raspberry 4</b></td>
+          </tr>
+          <tr>
+            <td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</td>
+            <td>0 <input type="radio" value="0" name="Raspberry4" checked="checked"></td>
+            <td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</td>
+            <td>1 <input type="radio" value="1" name="Raspberry4"></td>
+            <td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</td>
+            <td>2 <input type="radio" value="2" name="Raspberry4"></td>
+          </tr>
+          <tr>
+            <td><b>Android</b></td>
+          </tr>
+          <tr>
+            <td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</td>
+            <td>0 <input type="radio" value="0" name="Android" checked="checked"></td>
+            <td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</td>
+            <td>1 <input type="radio" value="1" name="Android"></td>
+          </tr>
+        </table>
+        <br>
+
+             <div class="field">
+            <label>Mode (Raspberry and Android devices connect using light/full mode)</label>
+            <div style="display: flex; justify-content:space-around; ">
+              <div>
+                <input type="radio" name="mode" value="light">Light
+              </div>
+              <div>
+                <input type="radio" name="mode" value="full" checked="checked">Full
+              </div>
+              
+            </div>
+        </div>
+        <div class="field">
+            <label>Any geth flags (followed by spaces)</label>
+            <textarea name="flags"></textarea>
+        </div>
+        <div class="field">
+          <label>Genesis File </label>
+          <textarea name="genesis"  rows="14">
+            {
+              "config": {
+                          "chainId": 3823,
+                          "homesteadBlock": 0,
+                          "eip150Block":0,
+                          "eip155Block": 0,
+                          "eip158Block": 0,
+                          "byzantiumBlock": 0,
+                          "constantinopleBlock": 0
+                        },
+              "difficulty": "200000",
+              "gasLimit": "2100000000000",
+              "alloc": {
+                   
+                       }
+          }
+      </textarea>
+      </div>
+        <input class="button" type="submit" value="Create Network">
+    </form>
+    <!-- <form action="handleFormDemo2.php" method="post">
+      
+      <br />
+      <input type="submit" value="Select">
+    </form> -->
+</div>
+<%- include ("./partials/footer") %>

@@ -1,0 +1,170 @@
+
+<html>
+    <head>
+        <title>
+           login form
+        </title>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css">
+
+        <link rel="stylesheet" href="/stylesheets/app.css">
+
+        
+
+        <script
+  src="https://code.jquery.com/jquery-3.1.1.min.js"
+  integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+  crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.js"></script>
+
+		<style>
+			body > .grid {
+				height: 100%;
+			}
+
+			.column {
+				max-width: 360px;
+			}
+			.ui.form .field > label {
+				text-align: left;
+			}
+		</style>
+		
+       
+    </head>
+    <body>
+		
+		<div class="ui medium fixed inverted labeled icon menu">
+			<div class="ui container">
+                <div class="header item"><i class="code icon"></i>Blockchain as a Service (BaaS) & IoT Testbed</div>
+                <a href="/" class="item"><i class="home icon"></i>Home</a>
+                <a href="/testbed/user_manual_out" class="item"><i class="book icon"></i>User manual</a>
+                <!-- <a href="/testbed/feedback" class="item"><i class="clipboard icon"></i>Feedback</a> -->
+                <a href="/testbed/about_out" class="item"><i class="info icon"></i>About</a>
+                <!-- <div class="right menu"> <a href="/logout" class="red item"><i class="sign-out icon"></i>Logout</a></div> -->
+               
+            </div>
+        </div>
+		
+<div>
+	<p>Hello there</p>
+<marquee behavior="slide" direction="left">The website services are available only from 4 to 6 PM in a day.</marquee>
+</div>
+
+<div class="ui middle aligned center aligned grid">
+	<div class="column">
+		<form class="ui form" action="/login" method="post" id="loginform">
+			<div class="ui segment" style="background-color:#f2f0f0;">
+				<h1><i class="connectdevelop icon"></i></h1>
+			<h2>Log in to App</h2>
+				<div class="ui center aligned basic segment">
+					<form class="ui form">
+						<div class="field">
+							<label >Username</label>
+							<div class="ui left icon input">
+								<input type="text" name="username" placeholder="Username" >
+								<i class="small user icon"></i>
+							</div>
+						</div>
+						<div class="field">
+							<label>Password</label>
+							<div class="ui left icon input">
+								
+								<input type="password" data-content ="make sure nobody's looking " name="password" placeholder="Password" >
+								<i class="small lock icon"></i>
+							</div>
+						</div>
+						<button class="ui animated button" tabindex="0" type="submit">
+							<div class="visible content">Login</div>
+							<div class="hidden content">
+							  <i class="right arrow icon"></i>
+							</div>
+						</button>
+						
+					</form>
+
+					<div class="ui divider"></div>
+					
+				</div>
+			</div>
+			<div class="ui segment"  style="background-color:#f2f0f0;">
+				New here? <a href="/signup">Sign Up</a>
+				</br>
+				<p><b>Note:</b> The website services are available from 4 to 6 PM.</br> Mail us at <i>pcl2016003@iiita.ac.in</i> for any queries</p>
+			</div>
+		</form>
+		<div class="ui <%=messageoption%> bottom attached negative message">
+			
+			<i class="small close icon"></i>
+			<div class="content">
+			
+			Wrong Username or Password
+			<i class="exclamation small icon"></i>
+		  </div>
+		</div>  
+	</div>
+</div>
+
+
+
+<div class="ui basic modal" id="1">
+	<div class="ui icon header">
+	  <i class="id badge icon"></i>
+	  Unable to Login
+	</div>
+	<div class="content">
+		<h4 style="text-align:center;">Looks like someone is already logged in.Please try later.</h4>
+	</div>
+	
+  </div>
+  <div class="ui basic modal" id="2">
+	<div class="ui icon header">
+	  <i class="sign-out icon"></i>
+	  Logged out
+	</div>
+	<div class="content">
+		<h4 style="text-align:center;">You are logged out by Admin.</h4>
+	</div>
+	
+  </div>
+<script>$('input[placeholder="Password"]')
+	.popup({
+	  on: 'hover',
+	  position : 'right center'
+	})
+  ;
+  
+
+  
+  $('#1').modal({
+    centered: false
+  })
+  .modal('<%=modaloption%>');
+;  
+
+$('#2').modal({
+    centered: false
+  })
+  .modal('<%=adminlogoutoption%>');
+;                       
+
+$('.message .close')
+  .on('click', function() {
+    $(this)
+      .closest('.message')
+      .transition('fade')
+    ;
+  })
+;
+
+$('.ui.form').form({fields:{username:'empty',password:'empty'},inline:true, 
+					onSuccess:function(event)
+						{
+							$('.ui.form.success').attr('class','ui form');
+						}
+						
+	});
+ </script>
+</body>
+</html>
+
+

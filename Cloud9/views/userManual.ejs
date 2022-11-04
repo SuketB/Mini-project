@@ -1,0 +1,65 @@
+<%- include ("./partials/header") %>
+<div class="ui main container segment" style="font-size: 15px">
+    <p style="font-size: 15px"> Welcome to the <b>Blockchain Testbed</b>. The goal of this platform is to provide both hardware and software as a service for users who wish to work on blockchain and IoT Hardware. Registered users can run selected blockchain software(ethereum) on the chosen IoT Hardware.</p>
+        <b> Features: (Provided)</b>
+        <ul>
+            <li>
+                Choose one or more hardware (Raspberry Pi model 3 & 4, android) to run blockchain software (Ethereum).
+            </li>
+            <li>
+                Automated networking of the chosen devices through the chosen blockchain software (Ethereum).
+            </li>
+            <li>
+                Monitor, query and download the stats of the created Network through grafana and prometheus.
+            </li>
+            <li>
+                Deploy Smart Contracts through Remix IDE
+            </li>
+            <li>
+                Join the network with your own Laptop/Desktop
+                    <ul>  
+                        <li>
+                            can connect to the created blockchain network by connecting to the bootnode from your device (Desktop/ Laptop).
+                        </li>
+                        <li>
+                            can sync and mine the blocks with your Device.
+                        </li>
+                    </ul>
+            </li>
+          </ul>
+    
+        <b>Note:</b>
+        <ol>
+            <li>
+                blockchain data will be deleted as soon as you exit.
+            </li>
+            <li>
+                Metrics provided via grafana, prometheus can't be accessed after you exit.
+            </li>
+        </ol>
+        <b>Features (Upcoming):</b>
+        <ol>
+            <li>
+                Power Consumption metrics of devices.
+            </li>
+            <li>
+                Add or remove devices after the initial network is created.
+            </li>
+            <li>
+                Choose the connections in the network. (Networking)
+            </li>
+        </ol>
+
+
+
+
+
+
+    
+    
+    
+    
+    </p>
+</div>
+   
+<%- include ("./partials/footer") %>

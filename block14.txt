@@ -1,0 +1,6 @@
+number of server nodes=2
+number of raspberry3 nodes=1
+number of raspberry4 nodes=1
+number of android nodes=0
+mode=full
+additional flags=
