@@ -36,21 +36,28 @@
     </style>
   </head>
   <body>
-     <div class="ui medium fixed inverted labeled icon menu">
-            <div class="ui container">
-            <div class="header item"><i class="code icon"></i>Blockchain as a Service (BaaS) & IoT Testbed</div>
-            <a href="/" class="item"><i class="home icon"></i>Home</a>
-            <a href="/testbed/user_manual" target="_blank" class="item"><i class="book icon"></i>User manual</a>
-            <a href="/testbed/feedback"  target="_blank" class="item"><i class="clipboard icon"></i>Feedback</a>
-            <a href="/testbed/about"  target="_blank" class="item"><i class="info icon"></i>About</a>
-            <div class="right menu"> <a href="/logout" class="red item"><i class="sign-out icon"></i>Logout</a></div>
+    <div class="ui medium fixed inverted labeled icon menu">
+      <div class="ui container">
+        <div class="header item">
+          <i class="code icon"></i>Blockchain as a Service (BaaS) & IoT Testbed
         </div>
+        <a href="/" class="item"><i class="home icon"></i>Home</a>
+        <a href="/testbed/user_manual_out" class="item"
+          ><i class="book icon"></i>User manual</a
+        >
+        <!-- <a href="/testbed/feedback" class="item"><i class="clipboard icon"></i>Feedback</a> -->
+        <a href="/testbed/about_out" class="item"
+          ><i class="info icon"></i>About</a
+        >
+        <!-- <div class="right menu"> <a href="/logout" class="red item"><i class="sign-out icon"></i>Logout</a></div> -->
+      </div>
+    </div>
     <div style="margin-top: 15vh; width:100vw">
       <h1 class="title text-center" style="text-align: center">
         Active Sessions
       </h1>
       <div class="card__container">
-        <% for(let user of users) {%>
+        <% for(let feedback of feedbacks) {%>
 
         <div
           class="ui card m-3 card__container__card"
@@ -60,20 +67,18 @@
             <i class="right floated ui id badge icon"></i>
 
             <div class="header">
-              <h3 class="mb-3">User: <%= user.user.username %></h3>
-              <p class="mb-3">Session Start: <%= user.start_time %></p>
-              Log out current user
+              <h3 class="mb-3">User: <%= feedback.user.username %></h3>
+              <p class="mb-3">Feedback: <%= feedback.feedback %> </p>
+             
             </div>
 
-            <div class="description">
-              Remove the user and delete the network here.
-            </div>
+            
           </div>
           <div class="extra content">
             
-            <form action="/admin/remove_network" class="ui form" method="POST">
-              <input class="ui basic red button" type="text" style="display: none;" value=<%= user._id %> name="removeUser" />
-              <input class="ui basic red button" type="submit" value="Remove"  />
+            <form action="/remove-feedback" class="ui form" method="POST">
+              <input class="ui basic red button" type="text" style="display: none;" value=<%= feedback._id %> name="feedback_id" />
+              <input class="ui basic red button" type="submit" value="Remove Feedback"  />
 
             </form>
           </div>
