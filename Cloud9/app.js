@@ -15,8 +15,10 @@ const chokidar = require('chokidar')
 const passport = require('passport') // authentication
 const connectEnsureLogin = require('connect-ensure-login') //authorization
 
-const { Server } = require('socket.io') // socket server
-// const io = new Server(app);
+const http = require('http')
+const server = http.createServer(app)
+const { Server } = require('socket.io')
+const io = new Server(server)
 
 const User = require('./models/user.js') // User Model
 const Feedback = require('./models/feedback.js') //Feedback model
@@ -26,7 +28,7 @@ const { nextTick } = require('process')
 const { MemoryStore } = require('express-session')
 const { resolve } = require('path')
 const { networkInterfaces } = require('os')
-const { error } = require('console')
+const { error, Console } = require('console')
 const { clearCache } = require('ejs')
 const ActiveSession = require('./models/ActiveSession.js')
 const feedback = require('./models/feedback.js')
@@ -34,6 +36,7 @@ const feedback = require('./models/feedback.js')
 let currentUser
 let currentUserName
 let networkStatus
+
 
 const emmiter = new EventEmitter()
 
@@ -48,6 +51,9 @@ app.use(bodyParser.urlencoded({ extended: true }))
 app.use(methodOverride('_method'))
 
 app.use(expressSanitizer())
+
+
+
 
 app.use(
   session({
@@ -91,7 +97,7 @@ passport.deserializeUser(User.deserializeUser())
 const mutex = new Mutex()
 
 app.get('/signup', (req, res) => {
-  res.render('signup', { messageoption: 'hidden' })
+  res.render('signup', { messageoption: 'hidden'})
 })
 
 function kick() {
@@ -199,12 +205,65 @@ app.get('/login', async (req, res) => {
   })
 })
 
+function valid_cred(req){
+  let user_name_str=req.body.username;
+  let pwd_str=req.body.password;
+  let email_str=req.body.email;
+  let int_str=req.body.institute;
+
+
+
+  if(pwd_str.length<8 || pwd_str.length>15){
+    //password size must be from 8 to 15
+    console.log("password 8 to 15!!!");
+    
+    res.json({ response: 'password 8 to 15!!!' })
+    
+     return false;
+    
+  }
+  // let is_lower=false;
+  // let is_upper=false;
+  // let is_int=false;
+  // let is_special=false;
+  // for(let i=0;i<pwd_str.length;i++){
+  //   let cur=pwd_str[i];
+  //   if(cur>=97 && cur<=122){
+  //     is_lower=true;
+  //   }
+  //   else if (cur >= 65 && cur <= 90) {
+  //     is_upper = true
+  //   }
+  //   else if (cur >= 48 && cur <= 57) {
+  //     is_int = true
+  //   }
+  //   else{
+  //     is_special=true;
+  //   }
+    
+  // }
+  // if(!is_special && is_lower && is_int && is_upper){
+  //   //correct 
+  // }
+  // else{
+  //   //passwod must conatain intger upper and lower case alphabets
+  //   console.log('passwod must conatain intger upper and lower case alphabets');
+  //   res.json({response: 'password must conatain intger upper and lower case alphabets'});
+  //   return false;
+  // }
+
+
+  return true;
+}
 app.post('/signup', (req, res) => {
-  console.log(req.body)
+  //console.log(req.body)
+  let valid_chek=valid_cred(req);
   
   User.register(
-    new User({ username: req.body.username }),
+    new User({ username: req.body.username,email :req.body.email,institute: req.body.institute }),
     req.body.password,
+    
+
     (err, user) => {
       if (err) {
         console.dir(err)
@@ -341,9 +400,12 @@ app.get(
       next('route')
     }
   },
-  function (req, res) {
+  async function (req, res) {
     console.log(req.sessionID)
 
+
+  
+    
     res.render('new')
   }
 )
@@ -409,7 +471,7 @@ let hours = date_ob.getHours();
 // current minutes
 let minutes = date_ob.getMinutes();
 
-  const session = new ActiveSession({
+  const session = new ActiveSession({ 
     start_time: hours + ':' + minutes,
     start_date: year + '-' + month + '-' + date + ' ',
     user: mongoose.Types.ObjectId(req.user._id),
@@ -478,8 +540,11 @@ app.get(
       next('route')
     }
   },
-  function (req, res) {
-    res.render('logs', { endpoint: '/events', redirect: '/testbed/actions' })
+  async function (req, res) {
+    const user = await User.findById(req.user._id);
+
+
+    res.render('logs', { endpoint: '/events', redirect: '/testbed/actions', user})
   }
 )
 
@@ -837,22 +902,43 @@ app.post('/remove-feedback',async (req,res) => {
 })
 
 let usersConnected = []
-// io.on('connection', (socket) => {
-//   socket.on('networkCreated',(userId,admin)=>{
-//     usersConnected.push({id: socket.id , userId: userId,admin:admin})
-//   })
-//   socket.on('adminRemoveNetwork',(userIdn)=>{
-//     const socketUser = usersConnected.find(user=>user.userId === userId)
-//     socket.to(socketUser.id).emit('adminRemoved')
-//   })
-//    socket.on('userRemoveNetwork', (userId) => {
-//      const adminUser = usersConnected.find((user) => user.admin === true)
-//      socket.to(adminUser.id).emit('userRemoved')
-//    })
+
+io.on('connection', (socket) => {
   
-// })
+  socket.on('successfull_login',({userId, userIsAdmin})=> {
+    console.log('user successfully login' , userId , userIsAdmin)
+    usersConnected.push({
+      socketId: socket.id,
+      userId : userId,
+      isAdmin : userIsAdmin
+    })
+
+    console.log(usersConnected)
+    
+  })
+  socket.on('removeUser',({userId})=>{ 
+    console.log('😊😊😊😊😊😊😊😊😊😊')
+    console.log(usersConnected)
+    console.log('😊😊😊😊😊😊😊😊😊😊')
+
+    console.log(userId)
+    const [{socketId}] = usersConnected.filter(userConnected => userConnected.userId === userId)
+    
+    // console.log('remove  user click' ,socketId)
+
+    // console.log(socket.id) 
+    socket.broadcast.to(socketId).emit('logoutUser');
+    
+  }) 
+
+  socket.on('disconnect', () => {
+    console.log('user disconnected')
+
+  })
+})
 
 
-app.listen(8000, process.env.IP, function () {
+server.listen(8000, process.env.IP, function () {
   console.log('Server is listening')
+  
 })

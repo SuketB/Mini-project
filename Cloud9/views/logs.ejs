@@ -1,4 +1,9 @@
 <%- include ("./partials/header") %>
+<script src="/socket.io/socket.io.js"></script>
+  
+<div id="mydivid" style="display: none;" data-test="<%= user._id %>" ></div>
+<div id="mydivadmin" style="display: none;" data-test="<%= user.isAdmin %>" ></div>
+
 <div class="ui main container segment">
     <div class="ui celled ordered list" id="alist">
         
@@ -66,5 +71,18 @@ document.addEventListener("DOMContentLoaded", streaming);
   </script>
     
    
+<script>
+  var socket = io();
 
+  const userId = document.getElementById('mydivid').dataset.test
+  const userIsAdmin = document.getElementById('mydivadmin').dataset.test
+
+
+  socket.emit('successfull_login',{userId , userIsAdmin})
+  
+  socket.on('logoutUser',()=>{
+    console.log('Logout')
+    document.getElementById('logout').click()
+  })
+</script>
    <%- include ("./partials/footer") %>
