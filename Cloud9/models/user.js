@@ -9,6 +9,22 @@ mongoose.connect('mongodb://127.0.0.1:27017/users', {
 // Create Model
 const Schema = mongoose.Schema
 
+
+const slotSchema = new Schema({
+  username: String,
+
+  date: String,
+
+  slotNumber: Number,
+
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'userData',
+  },
+})
+
+
+
 const User = new Schema({
   username: {
     type: String,
@@ -31,4 +47,5 @@ const User = new Schema({
 // Export Model
 User.plugin(passportLocalMongoose)
 
-module.exports = mongoose.model('userData', User, 'userData')
+module.exports.userModel = mongoose.model('userData', User, 'userData')
+module.exports.slotsModel = mongoose.model('Slots', slotSchema, 'slotData')

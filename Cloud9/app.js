@@ -14,13 +14,16 @@ const chokidar = require('chokidar')
 
 const passport = require('passport') // authentication
 const connectEnsureLogin = require('connect-ensure-login') //authorization
+var moment = require('moment') //moment library for date time related operations
 
 const http = require('http')
 const server = http.createServer(app)
 const { Server } = require('socket.io')
 const io = new Server(server)
 
-const User = require('./models/user.js') // User Model
+const models = require('./models/user.js') //importing user schema and slot schema
+const User = models.userModel // User Model
+const Slots = models.slotsModel //slot model
 const Feedback = require('./models/feedback.js') //Feedback model
 
 const expressSanitizer = require('express-sanitizer')
@@ -37,7 +40,6 @@ let currentUser
 let currentUserName
 let networkStatus
 
-
 const emmiter = new EventEmitter()
 
 let loginCache = new Set() //not needed...for multi user
@@ -51,9 +53,6 @@ app.use(bodyParser.urlencoded({ extended: true }))
 app.use(methodOverride('_method'))
 
 app.use(expressSanitizer())
-
-
-
 
 app.use(
   session({
@@ -95,9 +94,88 @@ passport.serializeUser(User.serializeUser())
 passport.deserializeUser(User.deserializeUser())
 
 const mutex = new Mutex()
+function notificationHandler(request, response) {
+  const headers = {
+    'Content-Type': 'text/event-stream',
+    Connection: 'keep-alive',
+    'Cache-Control': 'no-cache',
+  }
+  response.writeHead(200, headers)
+
+  function onLogoutWarning() {
+    response.write(
+      `data: ${JSON.stringify({
+        text: 'you session will be expiring soon',
+        class: 'warning',
+        title: 'Hurry!',
+      })}\n\n`
+    )
+  }
+  function onAutologout() {
+    response.write(
+      `data: ${JSON.stringify({
+        text: 'your session has ended',
+        class: 'error',
+        title: 'Logged out!',
+      })}\n\n`
+    )
+  }
+
+  let intervalID
+  if (!intervalID) {
+    intervalID = setInterval(() => {
+      response.write(`data: ${JSON.stringify({ text: 'noise' })}\n\n`)
+    }, 1000)
+  }
+  emitter.on('logout_warning' + request.sessionID, onLogoutWarning)
+  emitter.on('autologout' + request.sessionID, onAutologout)
+
+  request.on('close', () => {
+    clearInterval(intervalID)
+    intervalID = null
+    emitter.off('logout_warning' + request.sessionID, onLogoutWarning)
+    emitter.off('autologout' + request.sessionID, onAutologout)
+    console.log('notification connection closed')
+    response.end()
+  })
+}
+
+//for testing purposes every hour corresponds to slot 1
+function getSlotNumber() {
+  //function to convert current local time to slot number with momentjs library
+  var a = 0 //no slot
+  if (moment().hour() >= 0 && moment().hour() <= 23) {
+    a = 1 //morning slot 8am to 9am
+  } else if (moment().hour() >= 21 && moment().hour() <= 23) {
+    a = 2 //evening slot 8pm to 9pm
+  }
+
+  return a
+}
+
+//fucntion to authorize the user that he have a slot
+function userHaveSlot(req, res, next) {
+  if (req.sessionID === currentUser) {
+    next()
+  } else res.redirect('/booking')
+}
+// this middleware redirects to respective pages depending upon networkStatus variable
+function referer(req, res, next) {
+  console.log('referer redirecting')
+  if (networkStatus === 'ready') {
+    res.redirect('/')
+  } else if (networkStatus === 'createlogs') {
+    res.redirect('/testbed/createlogs')
+  } else if (networkStatus === 'running') {
+    res.redirect('/testbed/actions')
+  } else if (networkStatus === 'removelogs') {
+    res.redirect('/testbed/removelogs')
+  }
+}
+
 
 app.get('/signup', (req, res) => {
-  res.render('signup', { messageoption: 'hidden'})
+  res.render('signup', { messageoption: 'hidden' })
 })
 
 function kick() {
@@ -118,7 +196,7 @@ function kick() {
 
           return resolve()
         } else if (networkStatus === 'createlogs') {
-          createNetwork().then(() => {
+          waitforcreateNetwork().then(() => {
             var finalString = 'kill'
             try {
               fs.writeFileSync('./../kill.txt', finalString)
@@ -197,7 +275,7 @@ app.post('/kick', (req, res, next) => {
 app.get('/login', async (req, res) => {
   console.log(req.sessionID)
   console.log(req)
-   
+
   res.render('login', {
     adminlogoutoption: 'hide',
     modaloption: 'hide',
@@ -205,64 +283,60 @@ app.get('/login', async (req, res) => {
   })
 })
 
-function valid_cred(req){
-  let user_name_str=req.body.username;
-  let pwd_str=req.body.password;
-  let email_str=req.body.email;
-  let int_str=req.body.institute;
+function valid_cred(req) {
+  let user_name_str = req.body.username
+  let pwd_str = req.body.password
+  let email_str = req.body.email
+  let int_str = req.body.institute
 
-
-
-  if(pwd_str.length<8 || pwd_str.length>15){
+  if (pwd_str.length < 8 || pwd_str.length > 15) {
     //password size must be from 8 to 15
-    console.log("password 8 to 15!!!");
-    
+    console.log('password 8 to 15!!!')
+
     res.json({ response: 'password 8 to 15!!!' })
-    
-     return false;
-    
+
+    return false
   }
-  // let is_lower=false;
-  // let is_upper=false;
-  // let is_int=false;
-  // let is_special=false;
-  // for(let i=0;i<pwd_str.length;i++){
-  //   let cur=pwd_str[i];
-  //   if(cur>=97 && cur<=122){
-  //     is_lower=true;
-  //   }
-  //   else if (cur >= 65 && cur <= 90) {
-  //     is_upper = true
-  //   }
-  //   else if (cur >= 48 && cur <= 57) {
-  //     is_int = true
-  //   }
-  //   else{
-  //     is_special=true;
-  //   }
-    
-  // }
-  // if(!is_special && is_lower && is_int && is_upper){
-  //   //correct 
-  // }
-  // else{
-  //   //passwod must conatain intger upper and lower case alphabets
-  //   console.log('passwod must conatain intger upper and lower case alphabets');
-  //   res.json({response: 'password must conatain intger upper and lower case alphabets'});
-  //   return false;
-  // }
+  let is_lower = false
+  let is_upper = false
+  let is_int = false
+  let is_special = false
+  for (let i = 0; i < pwd_str.length; i++) {
+    let cur = pwd_str[i]
+    if (cur >= 'a' && cur <= 'z') {
+      is_lower = true
+    } else if (cur >= 'A' && cur <= Z) {
+      is_upper = true
+    } else if (cur >= '0' && cur <= '9') {
+      is_int = true
+    } else {
+      is_special = true
+    }
+  }
+  if (!is_special && is_lower && is_int && is_upper) {
+    //correct
+  } else {
+    //passwod must conatain intger upper and lower case alphabets
+    console.log('passwod must conatain intger upper and lower case alphabets')
+    res.json({
+      response: 'password must conatain intger upper and lower case alphabets',
+    })
+    return false
+  }
 
-
-  return true;
+  return true
 }
 app.post('/signup', (req, res) => {
   //console.log(req.body)
-  let valid_chek=valid_cred(req);
-  
+  let valid_chek = valid_cred(req)
+
   User.register(
-    new User({ username: req.body.username,email :req.body.email,institute: req.body.institute }),
+    new User({
+      username: req.body.username,
+      email: req.body.email,
+      institute: req.body.institute,
+    }),
     req.body.password,
-    
 
     (err, user) => {
       if (err) {
@@ -297,7 +371,6 @@ function singleUserLogin(req, res, next) {
 app.post(
   '/login',
   function (req, res, next) {
-    
     passport.authenticate('local', (err, user, info) => {
       if (err) {
         return next(err)
@@ -326,28 +399,44 @@ app.post(
   },
   // singleUserLogin,
   function (req, res) {
-    currentUser = req.sessionID
-    currentUserName = req.user.username
-    networkStatus = 'ready'
-    // req.release()
-    // delete req.release
-    console.log(req.user)
-    
+    // if the user logging in have a slot in database populate the variables
+    Slots.findOne(
+      {
+        username: req.user.username,
 
-    res.redirect('/')
+        date: moment().format('YYYY-MM-DD'),
+        slotNumber: getSlotNumber(),
+      },
+      function (err, obj) {
+        if (err) return next(err)
+
+        if (obj) {
+          currentUser = req.sessionID
+          currentUserName = req.user.username
+          networkStatus = 'ready'
+
+          currentSlot = obj
+
+          //here we set the time after how much time the user will be logged out automatically
+          setTimeout(() => {
+            emitter.emit('logout_warning' + req.sessionID)
+          }, 3 * 60 * 1000)
+
+          setTimeout(() => {
+            emitter.emit('autologout' + req.sessionID)
+            kick().catch((err) => {
+              console.log(err)
+            })
+          }, 3 * 60 * 1000 + 1000)
+        }
+        // res.redirect('/')
+        res.json({ success: true, redirect: '/' })
+      }
+    )
   }
 )
 
-let users = [
-  { username: 'suket_1', start_time: '04/11/2022 | 10:30 AM' },
-  { username: 'suket_2', start_time: '05/11/2022 | 10:30 AM' },
-  { username: 'suket_3', start_time: '06/11/2022 | 10:30 AM' },
-  { username: 'suket_4', start_time: '07/11/2022 | 10:30 AM' },
-  { username: 'suket_5', start_time: '08/11/2022 | 10:30 AM' },
-  { username: 'suket_6', start_time: '09/11/2022 | 10:30 AM' },
-  { username: 'suket_7', start_time: '10/11/2022 | 10:30 AM' },
-  { username: 'suket_8', start_time: '11/11/2022 | 10:30 AM' },
-]
+
 
 app.post('/login', (req, res) => {
   res.render('login', {
@@ -358,7 +447,7 @@ app.post('/login', (req, res) => {
 })
 
 app.get('/admin', async (req, res, next) => {
-   const users = await ActiveSession.find({}).populate('user')
+  const users = await ActiveSession.find({}).populate('user')
   if (req.user.isAdmin === true) {
     res.render('admindashboard', { admin: req.user.username, users })
   } else {
@@ -366,17 +455,157 @@ app.get('/admin', async (req, res, next) => {
   }
 })
 
-app.get('/logout', connectEnsureLogin.ensureLoggedIn('/login'), (req, res) => {
-  req.logout(function (err) {
-    if (err) {
-      return next(err)
+app.get(
+  '/booking',
+  connectEnsureLogin.ensureLoggedIn('/login'),
+  (req, res, next) => {
+    Slots.find({}, (err, slots) => {
+      //all slots in database are queried
+
+      if (err) return next(err)
+
+      var events = [] //this will store events in the format required for fullcalender.io package
+      slots.forEach((slot) => {
+        //console.log (typeof moment(slot.date).format('YYYY-MM-DD'));
+        if (slot.username === req.user.username)
+          events.push({
+            start: slot.date,
+            title: `you have booked slot ${slot.slotNumber}`,
+          })
+        else
+          events.push({
+            start: slot.date,
+            title: `slot ${slot.slotNumber} is already booked`,
+          })
+      })
+
+      res.render('booking', { slotList: JSON.stringify(events) }) //page rendered with all slots
+    })
+  }
+)
+
+
+//booking endpoint
+app.post('/booking', (req, res, next) => {
+  //finding the to be booked slot in database
+  Slots.findOne(
+    {
+      date: req.body.date,
+
+      slotNumber: req.body.slot,
+    },
+    function (err, doc) {
+      if (err) {
+        console.log(err)
+        return res.status(500).json({ success: false })
+      }
+
+      //if already exists respond with json
+      if (doc) {
+        return res.json({ success: true, message: 'Slot already booked' })
+      }
+      //else book slot
+      else {
+        console.log(getSlotNumber())
+
+        if (
+          1 ==
+          2 /*req.body.date===moment().format('YYYY-MM-DD')&& Number(req.body.slot)==getSlotNumber(moment().hour())*/
+        ) {
+          return res.json({ success: true, message: 'Slot expired' })
+        } else {
+          const slot = new Slots({
+            username: req.user.username,
+
+            date: req.body.date,
+
+            slotNumber: req.body.slot,
+            user: req.user._id,
+          })
+
+          slot.save((err) => {
+            if (err) return res.status(500).json({ error: err, success: false })
+
+            return res.json({
+              success: true,
+              message: 'Slot booked successfully',
+            })
+          })
+        }
+      }
+    }
+  )
+})
+
+
+
+app.get(
+  '/logout',
+  connectEnsureLogin.ensureLoggedIn('/login'),
+  (req, res, next) => {
+    if (req.sessionID === currentUser) {
+      if (networkStatus === 'ready') {
+        mutex.acquire().then(function (release) {
+          memstore.destroy(currentUser, (err) => {
+            if (err) {
+              release()
+              return next(err)
+            }
+
+            Slots.deleteOne(currentSlot)
+              .then(() => {
+                //deletes the currentSlot here.
+
+                currentUser = undefined
+                networkStatus = undefined
+                currentSlot = {}
+
+                release()
+
+                return res.json({ success: true, redirect: '/login' })
+              })
+              .catch((err) => {
+                release()
+                return next(err)
+              })
+          })
+        })
+      }
+
+      if (networkStatus === 'createlogs') {
+        res.json({
+          success: true,
+          message: 'Logs are being generated.Try after removing the network',
+          redirect: '/login'
+        })
+      }
+
+      if (networkStatus === 'removelogs') {
+        res.json({
+          success: true,
+          message: 'Logs are being generated.Wait until network is removed',
+          redirect: '/login',
+        })
+      }
+
+      if (networkStatus === 'running') {
+        res.json({ success: true, message: 'remove the network first',redirect: '/login'}
+        )
+      }
+    } else {
+      req.logout(function (err) {
+        if (err) {
+          return next(err)
+        }
+
+
+        res.json({ success: true, redirect: '/login' })
+      })
     }
 
-    kick().then(() => {})
-
-    res.redirect('/login')
-  })
-})
+    //logout endpoint also calls kick()
+  }
+)
 
 function referer(req, res, next) {
   if (networkStatus === 'ready') {
@@ -403,14 +632,11 @@ app.get(
   async function (req, res) {
     console.log(req.sessionID)
 
-
-  
-    
     res.render('new')
   }
 )
 
-app.get('/', connectEnsureLogin.ensureLoggedIn('/login'), referer)
+app.get('/', connectEnsureLogin.ensureLoggedIn('/login'),userHaveSlot, referer)
 
 app.get('/testbed/thankyou', function (req, res) {
   res.render('thankyou')
@@ -428,21 +654,17 @@ app.get(
   }
 )
 
-function createNetwork() {
+function waitforcreateNetwork() {
   return new Promise((resolve, reject) => {
-    console.log('Logs')
-    const watcher_endcreatelogs = chokidar.watch('../endcreatelogs.txt')
-    console.log('Logs2')
+    console.log('waitforcreateNetwork function called..also reading file')
+    const watcher_endcreatelogs = chokidar.watch('../log_user.txt')
+
     watcher_endcreatelogs.on('change', (event, path) => {
       console.log(event, path)
 
-      console.log('1')
-      console.log('line reaad')
-      readLastLines.read('../endcreatelogs.txt', 1).then(function (lines) {
-        if (lines === 'end') {
-          console.log('2')
-          networkStatus = 'running'
-
+      console.log('line reaad by waitforcreateNetwork ')
+      readLastLines.read('../log_user.txt', 1).then(function (lines) {
+        if (lines === 'end' || lines === 'end\n') {
           watcher_endcreatelogs.close()
 
           resolve()
@@ -452,82 +674,82 @@ function createNetwork() {
   })
 }
 
-app.post('/', connectEnsureLogin.ensureLoggedIn('/login'), async function (req, res) {
-  let date_ob = new Date();
+app.post(
+  '/',
+  connectEnsureLogin.ensureLoggedIn('/login'),
+  async function (req, res) {
+    let date_ob = new Date()
 
-// current date
-// adjust 0 before single digit date
-let date = ("0" + date_ob.getDate()).slice(-2);
+    // current date
+    // adjust 0 before single digit date
+    let date = ('0' + date_ob.getDate()).slice(-2)
 
-// current month
-let month = ("0" + (date_ob.getMonth() + 1)).slice(-2);
+    // current month
+    let month = ('0' + (date_ob.getMonth() + 1)).slice(-2)
 
-// current year
-let year = date_ob.getFullYear();
+    // current year
+    let year = date_ob.getFullYear()
 
-// current hours
-let hours = date_ob.getHours();
+    // current hours
+    let hours = date_ob.getHours()
 
-// current minutes
-let minutes = date_ob.getMinutes();
+    // current minutes
+    let minutes = date_ob.getMinutes()
 
-  const session = new ActiveSession({ 
-    start_time: hours + ':' + minutes,
-    start_date: year + '-' + month + '-' + date + ' ',
-    user: mongoose.Types.ObjectId(req.user._id),
-  })
+    const session = new ActiveSession({
+      start_time: hours + ':' + minutes,
+      start_date: year + '-' + month + '-' + date + ' ',
+      user: mongoose.Types.ObjectId(req.user._id),
+    })
 
-  const resp = await session.save()
-  console.log(resp)
+    const resp = await session.save()
+    console.log(resp)
 
-  var mode = req.body.mode.toString()
-  var flags = req.body.flags.toString()
-  var genesis = req.body.genesis.toString()
-  var server = req.body.Server.toString()
-  var raspberry3 = req.body.Raspberry3.toString()
-  var raspberry4 = req.body.Raspberry4.toString()
-  var android = req.body.Android.toString()
-  var finalString =
-    'number of server nodes=' +
-    server +
-    '\n' +
-    'number of raspberry3 nodes=' +
-    raspberry3 +
-    '\n' +
-    'number of raspberry4 nodes=' +
-    raspberry4 +
-    '\n' +
-    'number of android nodes=' +
-    android +
-    '\n' +
-    'mode=' +
-    mode +
-    '\n' +
-    'additional flags=' +
-    flags +
-    '\n'
+    var mode = req.body.mode.toString()
+    var flags = req.body.flags.toString()
+    var genesis = req.body.genesis.toString()
+    var server = req.body.Server.toString()
+    var raspberry3 = req.body.Raspberry3.toString()
+    var raspberry4 = req.body.Raspberry4.toString()
+    var android = req.body.Android.toString()
+    var finalString =
+      'number of server nodes=' +
+      server +
+      '\n' +
+      'number of raspberry3 nodes=' +
+      raspberry3 +
+      '\n' +
+      'number of raspberry4 nodes=' +
+      raspberry4 +
+      '\n' +
+      'number of android nodes=' +
+      android +
+      '\n' +
+      'mode=' +
+      mode +
+      '\n' +
+      'additional flags=' +
+      flags +
+      '\n'
 
-  //   genesis validation for errors
-  //   geth flags validation for errors.....consensus
+    //   genesis validation for errors
+    //   geth flags validation for errors.....consensus
 
-  try {
-    fs.writeFileSync('./../block14.txt', finalString)
+    try {
+      fs.writeFileSync('./../block14.txt', finalString)
 
-    fs.writeFileSync('../new_genesis.json', genesis)
-    console.log('The file was saved!')
-    // return res.redirect("./views/new");
+      fs.writeFileSync('../new_genesis.json', genesis)
+      console.log('The file was saved!')
+      // return res.redirect("./views/new");
 
-    networkStatus = 'createlogs'
+      networkStatus = 'createlogs'
 
-    res.redirect('/testbed/createlogs')
-
-
-    
-
-  } catch (err) {
-    next(err)
+      res.redirect('/testbed/createlogs')
+    } catch (err) {
+      next(err)
+    }
   }
-})
+)
 
 /***************************************page for logs which will subsequently request /events for logs to display************************/
 app.get(
@@ -541,10 +763,13 @@ app.get(
     }
   },
   async function (req, res) {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user._id)
 
-
-    res.render('logs', { endpoint: '/events', redirect: '/testbed/actions', user})
+    res.render('logs', {
+      endpoint: '/events',
+      redirect: '/testbed/actions',
+      user,
+    })
   }
 )
 
@@ -817,7 +1042,6 @@ app.post(
     }
     res.redirect('/admin')
   }
-  
 )
 app.post(
   '/testbed/monitor',
@@ -851,10 +1075,9 @@ app.post(
   connectEnsureLogin.ensureLoggedIn('/login'),
   async function (req, res) {
     // let d = new Date().toISOString();
-  
+
     var feedback = req.body.feedback.toString()
 
-    
     // var finalString= "Date:"+d +"  " + "Name:"+ name + "  "+"Address:"+ address +"  "+"Feedback:"+ feedback + "\n"
 
     // fs.appendFileSync("/home/user1/Try/feedback.txt",finalString, function(err) {
@@ -882,21 +1105,18 @@ app.post(
 )
 
 //fetching active sessions
-app.get('/active-sessions',async (req,res)=>{
-   
-    
-    console.log(sessions);
-    res.redirect()
+app.get('/active-sessions', async (req, res) => {
+  console.log(sessions)
+  res.redirect()
 })
 
-app.get('/feedback', async (req,res) => {
+app.get('/feedback', async (req, res) => {
   const feedbacks = await feedback.find().populate('user')
-  res.render('show_feedbacks',{feedbacks})
-
+  res.render('show_feedbacks', { feedbacks })
 })
 
-app.post('/remove-feedback',async (req,res) => {
-  console.log(req.body.feedback);
+app.post('/remove-feedback', async (req, res) => {
+  console.log(req.body.feedback)
   await feedback.findByIdAndRemove(req.body.feedback_id)
   res.redirect('/feedback')
 })
@@ -904,41 +1124,37 @@ app.post('/remove-feedback',async (req,res) => {
 let usersConnected = []
 
 io.on('connection', (socket) => {
-  
-  socket.on('successfull_login',({userId, userIsAdmin})=> {
-    console.log('user successfully login' , userId , userIsAdmin)
+  socket.on('successfull_login', ({ userId, userIsAdmin }) => {
+    console.log('user successfully login', userId, userIsAdmin)
     usersConnected.push({
       socketId: socket.id,
-      userId : userId,
-      isAdmin : userIsAdmin
+      userId: userId,
+      isAdmin: userIsAdmin,
     })
 
     console.log(usersConnected)
-    
   })
-  socket.on('removeUser',({userId})=>{ 
+  socket.on('removeUser', ({ userId }) => {
     console.log('😊😊😊😊😊😊😊😊😊😊')
     console.log(usersConnected)
     console.log('😊😊😊😊😊😊😊😊😊😊')
 
     console.log(userId)
-    const [{socketId}] = usersConnected.filter(userConnected => userConnected.userId === userId)
-    
+    const [{ socketId }] = usersConnected.filter(
+      (userConnected) => userConnected.userId === userId
+    )
+
     // console.log('remove  user click' ,socketId)
 
-    // console.log(socket.id) 
-    socket.broadcast.to(socketId).emit('logoutUser');
-    
-  }) 
+    // console.log(socket.id)
+    socket.broadcast.to(socketId).emit('logoutUser')
+  })
 
   socket.on('disconnect', () => {
     console.log('user disconnected')
-
   })
 })
 
-
 server.listen(8000, process.env.IP, function () {
   console.log('Server is listening')
-  
 })
